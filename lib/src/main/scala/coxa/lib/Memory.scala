@@ -1,6 +1,6 @@
 // https://github.com/balanx/Coxalib
 
-package coxa.base
+package coxa.lib
 
 import spinal.core._
 import spinal.lib._
@@ -291,5 +291,10 @@ case class Pipe(mode: Int, width : Int) extends Component {
     case 3 => M <-/< S
     case _ => println(s"##Error@Pipe : mode = ${mode} is out of range.")
   }
+}
+
+
+object MemoryTest extends App {
+  Config.spinal.generateVerilog(Ram(8, 16))
 }
 
