@@ -25,6 +25,8 @@ val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-
 
 val commonSettings = Seq(
     fork := true,
+    libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.19",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % "test",
     libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
 )
 
