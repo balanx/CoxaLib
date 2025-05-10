@@ -1,4 +1,4 @@
-ThisBuild / version := "1.0"
+ThisBuild / version := "0.0.3"
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.balanx"
 
@@ -14,21 +14,26 @@ ThisBuild / developers := List(
 )
 
 
-publishTo := sonatypeCentralPublishToBundle.value
-//publishMavenStyle := true
-
-
 val spinalVersion = "1.12.0"
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
 val commonSettings = Seq(
+
+    publishTo := sonatypeCentralPublishToBundle.value,
     fork := true,
+
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.19",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % "test",
-    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
+    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin),
+
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case x => MergeStrategy.first
+    }
 )
+
 
 lazy val root = (project in file("."))
   .settings(

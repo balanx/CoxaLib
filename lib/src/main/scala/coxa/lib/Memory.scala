@@ -2,38 +2,156 @@
 
 package coxa.lib
 
-import spinal.core._
+//import scala.language.postfixOps
+import spinal.core.{UInt, _}
 import spinal.lib._
 
-
 // Single-Port
-case class Ram(width: Int, depth: Int) extends Component {
+case class Ram1(width: Int, depth: Int) extends Component {
   val io = new Bundle {
     val E = in Bool()
     val W = in Bool()
     val A = in UInt (log2Up(depth) bits)
     val D = in UInt(width bits)
     val Q = out UInt(width bits)
+
+    val CK =  in Bool()
   }
 
   noIoPrefix()
-  setDefinitionName(s"Ram_${width}_${depth}")
+  setDefinitionName(s"Ram1_${width}_${depth}")
 
   val mem = Mem(UInt(width bits), depth)
   mem.addAttribute("ram_style", "auto")
 
-  val area_clk = new ClockingArea(ClockDomain(ClockDomain.current.readClockWire)) {
-    when(io.W & io.E) {
+  val wen = ( io.W & io.E)
+  val ren = (~io.W & io.E)
+  val clk = ClockDomain(io.CK)
+
+  //  val area_clk = new ClockingArea(ClockDomain(ClockDomain.current.readClockWire)) {
+  val area_clk = new ClockingArea(clk) {
+    when(wen) {
       mem(io.A) := io.D
     }
 
-    val ren = (~io.W & io.E)
     io.Q := RegNextWhen(mem(io.A), ren)
   }
+
 }
 
 
 // Simple Dual-Port
+case class Ram2A(width: Int, depth: Int) extends Component {
+
+  val io = new Bundle {
+    val E = in Bool()
+    val W = in Bool()
+    val AA, AB = in UInt (log2Up(depth) bits)
+    val D = in UInt (width bits)
+    val Q = out UInt (width bits)
+
+    val CKA =  in Bool()
+    val CKB =  in Bool()
+  }
+
+  noIoPrefix()
+  setDefinitionName(s"Ram2A_${width}_${depth}")
+
+  val mem = Mem(UInt(width bits), depth)
+  mem.addAttribute("ram_style", "auto")
+
+  val wen = ( io.W & io.E)
+  val ren = (~io.W & io.E)
+  //ClockDomain(ClockDomain.current.readClockWire)
+  val clk_a = ClockDomain(io.CKA)
+  val clk_b = ClockDomain(io.CKB)
+  clk_b.setSynchronousWith(clk_a)
+
+  val area_clka = new ClockingArea(clk_a) {
+    when(wen) {
+      mem(io.AA) := io.D
+    }
+  }
+
+  val area_clkb = new ClockingArea(clk_b) {
+    io.Q := RegNextWhen(mem(io.AB), ren)
+  }
+
+
+  def Write(enable: Bool, address: UInt, data: UInt): Unit = {
+    io.W := enable
+    io.AA := address
+    io.D := data
+  }
+
+  def Read(enable: Bool, address: UInt): UInt = {
+    io.E := enable
+    io.AB := address
+    io.Q
+  }
+
+  //  if (depth < (1 << io.AA.getWidth)) {
+  //    assert(io.AA >= depth, (L"AA(=${io.AA}) greater than or equal to depth") + s"(=$depth)")
+  //    assert(io.AB >= depth, L"AB(=${io.AB}) greater than or equal to depth")
+  //  }
+
+}
+
+
+case class Ram2S(width: Int, depth: Int) extends Component {
+
+  val io = new Bundle {
+    val E = in Bool()
+    val W = in Bool()
+    val AA, AB = in UInt (log2Up(depth) bits)
+    val D = in UInt (width bits)
+    val Q = out UInt (width bits)
+
+     val CK =  in Bool()
+  }
+
+  noIoPrefix()
+  setDefinitionName(s"Ram2S_${width}_${depth}")
+
+  val mem = Mem(UInt(width bits), depth)
+  mem.addAttribute("ram_style", "auto")
+
+  val wen = ( io.W & io.E)
+  val ren = (~io.W & io.E)
+  //ClockDomain(ClockDomain.current.readClockWire)
+  val clk = ClockDomain(io.CK)
+
+  val area_clk = new ClockingArea(clk) {
+    when(wen) {
+      mem(io.AA) := io.D
+    }
+
+    io.Q := RegNextWhen(mem(io.AB), ren)
+  }
+
+
+  def Write(enable: Bool, address: UInt, data: UInt): Unit = {
+    io.W := enable
+    io.AA := address
+    io.D := data
+  }
+
+  def Read(enable: Bool, address: UInt): UInt = {
+    io.E := enable
+    io.AB := address
+    io.Q
+  }
+
+  //  if (depth < (1 << io.AA.getWidth)) {
+  //    assert(io.AA >= depth, (L"AA(=${io.AA}) greater than or equal to depth") + s"(=$depth)")
+  //    assert(io.AB >= depth, L"AB(=${io.AB}) greater than or equal to depth")
+  //  }
+
+}
+
+
+
+/*
 case class RamConflictR(
                  width: Int,
                  depth: Int) extends Component {
@@ -59,42 +177,6 @@ case class RamConflictR(
     val d = RegNext(io.D)
     io.qo := sel ? d | io.qi
   }
-}
-
-
-class Ram2(width: Int, depth: Int, async: Boolean = false) extends Component {
-
-  val io = new Bundle {
-    val E = in Bool()
-    val W = in Bool()
-    val AA, AB = in UInt (log2Up(depth) bits)
-    val D = in UInt (width bits)
-    val Q = out UInt (width bits)
-
-    val CK  = !async generate (in Bool())
-    val CKA =  async generate (in Bool())
-    val CKB =  async generate (in Bool())
-  }
-  noIoPrefix()
-  val fname = if (async) "A2Ram" else "S2Ram"
-
-  def Write(enable: Bool, address: UInt, data: UInt): Unit = {
-    io.W := enable
-    io.AA := address
-    io.D := data
-  }
-
-  def Read(enable: Bool, address: UInt): UInt = {
-    io.E := enable
-    io.AB := address
-    io.Q
-  }
-
-  //  if (depth < (1 << io.AA.getWidth)) {
-  //    assert(io.AA >= depth, (L"AA(=${io.AA}) greater than or equal to depth") + s"(=$depth)")
-  //    assert(io.AB >= depth, L"AB(=${io.AB}) greater than or equal to depth")
-  //  }
-
 }
 
 
@@ -275,6 +357,83 @@ case class RamPipe(width : Int) extends Component {
     io.M.payload := RegNextWhen(io.S.payload, io.S.ready)
   }
 }
+*/
+
+
+case class RamRead(width : Int) extends Component {
+
+  val io = new Bundle {
+    val data = in UInt(width bits)
+    val ren  = in  Bool()  // read enable
+    val nxa  = out Bool()  // next address
+    val M = master Stream(UInt(width bits))
+  }
+  noIoPrefix()
+  setDefinitionName(s"RamStream_${width}")
+
+  io.nxa  := ~io.M.valid | io.M.ready
+  io.M.valid := RegNextWhen(io.ren, io.nxa) init False
+  io.M.payload := io.data
+
+}
+
+
+case class RamPipe(width : Int) extends Component {
+
+  val io = new Bundle {
+    val S = slave(Stream(UInt(width bits)))
+    val M = master(Stream(UInt(width bits)))
+  }
+  noIoPrefix()
+  setDefinitionName(s"RamPipe_${width}")
+
+  val payload_dly = RegNext(io.S.payload)
+  val fire_dly = RegNext(io.S.fire, False)
+  io.S.ready := io.M.ready || (!io.M.valid)
+
+  val jammed = fire_dly & (!io.M.ready)  // being valid && NOT ready at down-stream boundary
+  val payload_hold = RegNextWhen(payload_dly, jammed)
+
+  val valid_hold = Reg(Bool()) init(False)
+  when (io.M.ready) {
+    valid_hold.clear()
+  } elsewhen (jammed) {
+    valid_hold.set()
+  }
+
+  io.M.valid := valid_hold || fire_dly
+  io.M.payload := Mux(valid_hold, payload_hold, payload_dly)
+
+}
+
+
+//case class FifoRead(addrWidth : Int, dataWidth : Int, regout : Boolean=false) extends Component {
+case class FifoRead(addrWidth : Int) extends Component {
+
+  val width = addrWidth + 1
+
+  val io = new Bundle {
+    val wpt = in UInt(width bits)
+    val empty = out Bool()
+    val rused  = out UInt(width bits)
+//    val R = master Stream(UInt(width bits))
+  }
+  noIoPrefix()
+//  val Fname = if (regout) "FifoReadReg" else "FifoRead"
+//  setDefinitionName(s"${Fname}_${addrWidth}_${dataWidth}")
+  setDefinitionName(s"FifoRead_${addrWidth}")
+
+
+  val rpt = Reg(UInt(width bits)) init 0
+  rpt := rpt + 1
+
+  io.empty := (io.wpt === rpt)
+  io.rused := (io.wpt  -  rpt)
+
+
+}
+
+
 
 
 case class Pipe(mode: Int, width : Int) extends Component {
@@ -294,7 +453,12 @@ case class Pipe(mode: Int, width : Int) extends Component {
 }
 
 
-object MemoryTest extends App {
-  Config.spinal.generateVerilog(Ram(8, 16))
+object MemoryGen extends App {
+//  Config.spinal.generateVerilog(Ram1 (8, 16) )
+//  Config.spinal.generateVerilog(Ram2A(8, 16) )
+//  Config.spinal.generateVerilog(Ram2S(8, 16) )
+  Config.spinal.generateVerilog(RamRead(8) )
+  Config.spinal.generateVerilog(RamPipe(8) )
+//  Config.spinal.generateVerilog(FifoRead (8) )
 }
 
