@@ -17,9 +17,8 @@ class StramTests extends AnyFunSuite {
 
     // Compile the Component for the simulator.
     val compiled = SimConfig.withWave.allOptimisation.compile(
-      rtl = new RamPipe(
-        width = 8
-      )
+//      rtl = new RamPipe(8)
+      rtl = new Fifo(10, 8)
     )
 
     // Run the simulation.
@@ -53,7 +52,7 @@ class StramTests extends AnyFunSuite {
           dut.clockDomain.waitSampling()
           if(dut.io.M.valid.toBoolean && dut.io.M.ready.toBoolean) {
             val q = queueModel.dequeue()
-//            println(dut.io.M.payload.toLong , q)
+            println(dut.io.M.payload.toLong , q)
             assert(dut.io.M.payload.toLong == q)
           }
         }
