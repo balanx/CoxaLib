@@ -18,7 +18,7 @@ class StramTests extends AnyFunSuite {
     // Compile the Component for the simulator.
     val compiled = SimConfig.withWave.allOptimisation.compile(
 //      rtl = new RamPipe(8)
-      rtl = new Fifo(10, 8)
+      rtl = new Fifo(10, 8, regOut = true)
     )
 
     // Run the simulation.
@@ -26,7 +26,8 @@ class StramTests extends AnyFunSuite {
       val queueModel = Queue[Long]()
 
       dut.clockDomain.forkStimulus(period = 10)
-      SimTimeout(1000000*10)
+      val simLength = 100000
+      SimTimeout(simLength*10 + 1000)
 
       // Push data randomly, and fill the queueModel with pushed transactions.
       val pushThread = fork {
@@ -47,7 +48,7 @@ class StramTests extends AnyFunSuite {
       // Pop data randomly, and check that it match with the queueModel.
       val popThread = fork {
         dut.io.M.ready #= true
-        for(i <- 0 until 100000) {
+        for(i <- 0 until simLength) {
           dut.io.M.ready.randomize()
           dut.clockDomain.waitSampling()
           if(dut.io.M.valid.toBoolean && dut.io.M.ready.toBoolean) {

@@ -306,27 +306,10 @@ case class Ram3(width: Int, depth: Int, clk_a: ClockDomain = null, clk_b: ClockD
 }
 
 
-// io.M <-< io.S
-case class RamPipe(width : Int) extends Component {
-
-  val io = new Bundle {
-    val CK = in Bool()
-    val S = slave Stream (UInt(width bits))
-    val M = master Stream (UInt(width bits))
-  }
-  noIoPrefix()
-  setDefinitionName(s"RamPipe_${width}")
-
-  val area_clk = new ClockingArea(ClockDomain(io.CK)) {
-    io.S.ready := ~io.M.valid | io.M.ready
-    io.M.valid := RegNextWhen(io.S.valid, io.S.ready)
-    io.M.payload := RegNextWhen(io.S.payload, io.S.ready)
-  }
-}
 */
 
 
-case class RamRead(dataWidth : Int) extends Component {
+case class RamRead(dataWidth : Int, regOut: Boolean = false) extends Component {
 
   val io = new Bundle {
     val data = in UInt(dataWidth bits)
@@ -337,21 +320,30 @@ case class RamRead(dataWidth : Int) extends Component {
   noIoPrefix()
   setDefinitionName(s"RamRead_${dataWidth}")
 
-  io.nxa  := ~io.M.valid | io.M.ready
-  io.M.valid := RegNextWhen(io.ren, io.nxa) init False
-  io.M.payload := io.data
+  val valid = RegNextWhen(io.ren, io.nxa) init False
 
+  if (regOut) {
+    val p = RamRegout(dataWidth)
+    io.M <> p.io.M
+    io.nxa := ~p.io.S.valid | p.io.S.ready
+    p.io.S.valid := valid
+    p.io.S.payload := io.data
+  } else {
+    io.nxa := ~io.M.valid | io.M.ready
+    io.M.valid := valid
+    io.M.payload := io.data
+  }
 }
 
 
-case class RamPipe(dataWidth : Int) extends Component {
+case class RamRegout(dataWidth : Int) extends Component {
 
   val io = new Bundle {
     val S = slave(Stream(UInt(dataWidth bits)))
     val M = master(Stream(UInt(dataWidth bits)))
   }
   noIoPrefix()
-  setDefinitionName(s"RamPipe_${dataWidth}")
+  setDefinitionName(s"RamRegout_${dataWidth}")
 
   val payload_dly = RegNext(io.S.payload)
   val fire_dly = RegNext(io.S.fire, False)
@@ -374,10 +366,11 @@ case class RamPipe(dataWidth : Int) extends Component {
 
 
 //case class FifoRead(addrWidth : Int, dataWidth : Int, regout : Boolean=false) extends Component {
-case class FifoRead(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDomain.current) extends Component {
+case class FifoRead(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDomain.current, regOut: Boolean = false) extends Component {
 
   val addrWidth = log2Up(depth)
   val ptWidth = addrWidth + 1
+  val usedWidth = log2Up(depth + 1)
 
   val io = new Bundle {
     val wpt = in UInt(ptWidth bits)
@@ -386,20 +379,20 @@ case class FifoRead(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDomai
     val rData = in UInt(dataWidth bits)
     val ren = out Bool()
     val empty = out Bool()
-    val rused  = out UInt(ptWidth bits)
+    val rused  = out UInt(usedWidth bits)
     val M = master Stream(UInt(dataWidth bits))
   }
   noIoPrefix()
   setDefinitionName(s"FifoRead_${depth}_${dataWidth}")
 
   val clockArea = clk on {
-    val pipe = RamRead(dataWidth)
+    val pipe = RamRead(dataWidth, regOut)
     io.M << pipe.io.M
     io.ren := ~io.empty & pipe.io.nxa
     pipe.io.data := io.rData
     pipe.io.ren := io.ren
 
-    io.rused := Mux(io.wpt >= io.rpt, io.wpt - io.rpt, io.wpt + depth * 2 - io.rpt).resize(ptWidth)
+    io.rused := Mux(io.wpt >= io.rpt, io.wpt - io.rpt, io.wpt + depth * 2 - io.rpt).resize(usedWidth)
     io.empty := (io.rused === io.rused.getZero)
     io.rAddr := Mux(io.rpt < depth, io.rpt, io.rpt - depth).resize(addrWidth)
 
@@ -411,6 +404,7 @@ case class FifoWrite(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDoma
 
   val addrWidth = log2Up(depth)
   val ptWidth = addrWidth + 1
+  val usedWidth = log2Up(depth + 1)
 
   val io = new Bundle {
     val wpt = out UInt(ptWidth bits)
@@ -419,7 +413,7 @@ case class FifoWrite(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDoma
     val wData = out UInt(dataWidth bits)
     val wen = out Bool()
     val full = out Bool()
-    val wused  = out UInt(ptWidth bits)
+    val wused  = out UInt(usedWidth bits)
     val S = slave Stream(UInt(dataWidth bits))
   }
   noIoPrefix()
@@ -429,7 +423,7 @@ case class FifoWrite(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDoma
     io.wData := io.S.payload
     io.wen := ~io.full & io.S.valid
 
-    io.wused := Mux(io.wpt >= io.rpt, io.wpt - io.rpt, io.wpt + depth * 2 - io.rpt).resize(ptWidth)
+    io.wused := Mux(io.wpt >= io.rpt, io.wpt - io.rpt, io.wpt + depth * 2 - io.rpt).resize(usedWidth)
     //  io.wAddr := io.wpt(0, addrWidth bits)
     io.wAddr := Mux(io.wpt < depth, io.wpt, io.wpt - depth).resize(addrWidth)
     //  io.full := (io.wAddr === rAddr) & (io.wpt.msb =/= io.rpt.msb)
@@ -441,29 +435,47 @@ case class FifoWrite(depth : Int, dataWidth : Int, clk : ClockDomain = ClockDoma
 }
 
 
-case class Fifo(depth : Int, dataWidth : Int, clkA : ClockDomain = ClockDomain.current, clkB : ClockDomain = ClockDomain.current) extends Component {
+case class Fifo (
+    depth : Int,
+    dataWidth : Int,
+    clkA : ClockDomain = ClockDomain.current,
+    clkB : ClockDomain = ClockDomain.current,
+    regOut: Boolean = false,
+    cdcDepth: Int = 1)
+  extends Component {
 
   val addrWidth = log2Up(depth)
   val ptWidth = addrWidth + 1
   val async = (clkA != clkB)
+  val usedWidth = log2Up(depth + 1)
+
   clkB.setSyncWith(clkA)
 
   val io = new Bundle {
 //    val full = out Bool()
-    val wused  = out UInt(ptWidth bits)
+    val wused  = out UInt(usedWidth bits)
     val S = slave Stream(UInt(dataWidth bits))
 
 //    val empty = out Bool()
-    val rused  = out UInt(ptWidth bits)
+    val rused  = out UInt(usedWidth bits)
     val M = master Stream(UInt(dataWidth bits))
   }
   noIoPrefix()
   setDefinitionName(s"Fifo_${depth}_${dataWidth}")
 
   val wSide =  FifoWrite(depth, dataWidth, clkA)
-  val rSide =  FifoRead (depth, dataWidth, clkB)
-  wSide.io.wpt <> rSide.io.wpt
-  wSide.io.rpt <> rSide.io.rpt
+  val rSide =  FifoRead (depth, dataWidth, clkB, regOut)
+  if (async) {
+    val a2b = CdcRing(clkA, clkB, ptWidth, cdcDepth)
+    val b2a = CdcRing(clkB, clkA, ptWidth, cdcDepth)
+    wSide.io.wpt <> a2b.io.D
+    a2b.io.Q <> rSide.io.wpt
+    rSide.io.rpt <> b2a.io.D
+    b2a.io.Q <> wSide.io.rpt
+  } else {
+    wSide.io.wpt <> rSide.io.wpt
+    wSide.io.rpt <> rSide.io.rpt
+  }
 
 //  io.full  <> wSide.io.full
   io.wused <> wSide.io.wused
@@ -498,15 +510,15 @@ case class Pipe(width: Int, mode : Int = 1) extends Component {
 }
 
 
-object MemoryGen extends App {
+object MemoryVerilog extends App {
 //  Config.spinal.generateVerilog(Ram1 (8, 16) )
 //  Config.spinal.generateVerilog(Ram2(8, 16, false) )
 //  Config.spinal.generateVerilog(Ram2S(8, 16) )
-//  Config.spinal.generateVerilog(RamRead(8) )
+//  Config.spinal.generateVerilog(RamRead(8, true) )
 //  Config.spinal.generateVerilog(RamPipe(8) )
 //  Config.spinal.generateVerilog(FifoRead (8) )
 
-    Config.spinal.generateVerilog(Fifo(20, 8, ClockDomain.external("a"), ClockDomain.external("b")) )
+    Config.spinal.generateVerilog(Fifo(20, 8, ClockDomain.external("a"), ClockDomain.external("b"), true) )
 //    Config.spinal.generateVerilog(Fifo(20, 8) )
 }
 
