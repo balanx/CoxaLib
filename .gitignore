@@ -41,8 +41,6 @@ bin/
 *.vcd
 !tester/src/test/resources/*.vhd
 
-
-gen/
 simWorkspace/
 tmp/
 null
