@@ -1,10 +1,10 @@
 // Generator : SpinalHDL v1.12.0    git head : 1aa7d7b5732f11cca2dd83bacc2a4cb92ca8e5c9
-// Component : FifoA_h20_w8_c1_r0
-// Git hash  : 0fec75bfcf7614934dda2997dc0ed1df5dbe6289
+// Component : FifoA_c1_r0_h20_w8
+// Git hash  : 0ccfbb927b999c94e318d03edc3f767771d83daa
 
-`timescale 1ns/1ps
 
-module FifoA_h20_w8_c1_r0 (
+
+module FifoA_c1_r0_h20_w8 (
   input  wire          CKA,
   input  wire          RSTA,
   input  wire          CKB,
@@ -37,7 +37,7 @@ module FifoA_h20_w8_c1_r0 (
   wire       [5:0]    cdcRing_1_Q;
   wire       [7:0]    mem_Q;
 
-  FifoWrite_h20_w8 A_w (
+  CX_FifoWrite_h20_w8 A_w (
     .wpt       (A_w_wpt[5:0]    ), //o
     .rpt       (cdcRing_1_Q[5:0]), //i
     .wAddr     (A_w_wAddr[4:0]  ), //o
@@ -48,10 +48,10 @@ module FifoA_h20_w8_c1_r0 (
     .S_valid   (S_valid         ), //i
     .S_ready   (A_w_S_ready     ), //o
     .S_payload (S_payload[7:0]  ), //i
-    .CKA       (CKA             ), //i
-    .RSTA      (RSTA            )  //i
+    .clk       (CKA             ), //i
+    .reset     (RSTA            )  //i
   );
-  FifoRead_h20_h8_r0 B_r (
+  CX_FifoRead_r0_h20_w8 B_r (
     .wpt       (cdcRing_Q[5:0]    ), //i
     .rpt       (B_r_rpt[5:0]      ), //o
     .rAddr     (B_r_rAddr[4:0]    ), //o
@@ -62,10 +62,10 @@ module FifoA_h20_w8_c1_r0 (
     .M_valid   (B_r_M_valid       ), //o
     .M_ready   (M_ready           ), //i
     .M_payload (B_r_M_payload[7:0]), //o
-    .CKB       (CKB               ), //i
-    .RSTB      (RSTB              )  //i
+    .clk       (CKB               ), //i
+    .reset     (RSTB              )  //i
   );
-  CdcRing_c1_w6 cdcRing (
+  CX_CdcRing_c1_w6 cdcRing (
     .CKA  (CKA           ), //i
     .RSTA (RSTA          ), //i
     .CKB  (CKB           ), //i
@@ -73,7 +73,7 @@ module FifoA_h20_w8_c1_r0 (
     .D    (A_w_wpt[5:0]  ), //i
     .Q    (cdcRing_Q[5:0])  //o
   );
-  CdcRing_c1_w6 cdcRing_1 (
+  CX_CdcRing_c1_w6 cdcRing_1 (
     .CKA  (CKB             ), //i
     .RSTA (RSTB            ), //i
     .CKB  (CKA             ), //i
@@ -81,7 +81,7 @@ module FifoA_h20_w8_c1_r0 (
     .D    (B_r_rpt[5:0]    ), //i
     .Q    (cdcRing_1_Q[5:0])  //o
   );
-  Ram2A_h20_w8 mem (
+  CX_Ram2A_h20_w8 mem (
     .E   (B_r_ren       ), //i
     .W   (A_w_wen       ), //i
     .AA  (A_w_wAddr[4:0]), //i
@@ -99,7 +99,7 @@ module FifoA_h20_w8_c1_r0 (
 
 endmodule
 
-module Ram2A_h20_w8 (
+module CX_Ram2A_h20_w8 (
   input  wire          E,
   input  wire          W,
   input  wire [4:0]    AA,
@@ -143,9 +143,9 @@ module Ram2A_h20_w8 (
 
 endmodule
 
-//CdcRing_c1_w6 replaced by CdcRing_c1_w6
+//CX_CdcRing_c1_w6 replaced by CX_CdcRing_c1_w6
 
-module CdcRing_c1_w6 (
+module CX_CdcRing_c1_w6 (
   input  wire          CKA,
   input  wire          RSTA,
   input  wire          CKB,
@@ -158,7 +158,7 @@ module CdcRing_c1_w6 (
   wire       [5:0]    a2b_Q;
   wire                b2a_Q;
 
-  CdcFlip_c1_w6_r1 a2b (
+  CX_CdcFlip_c1_r1_w6 a2b (
     .CKA  (CKA       ), //i
     .RSTA (RSTA      ), //i
     .CKB  (CKB       ), //i
@@ -168,7 +168,7 @@ module CdcRing_c1_w6 (
     .D    (D[5:0]    ), //i
     .Q    (a2b_Q[5:0])  //o
   );
-  CdcSingle_c1 b2a (
+  CX_CdcSingle_c1 b2a (
     .CKA  (CKB   ), //i
     .RSTA (RSTB  ), //i
     .CKB  (CKA   ), //i
@@ -180,7 +180,7 @@ module CdcRing_c1_w6 (
 
 endmodule
 
-module FifoRead_h20_h8_r0 (
+module CX_FifoRead_r0_h20_w8 (
   input  wire [5:0]    wpt,
   output wire [5:0]    rpt,
   output wire [4:0]    rAddr,
@@ -191,8 +191,8 @@ module FifoRead_h20_h8_r0 (
   output wire          M_valid,
   input  wire          M_ready,
   output wire [7:0]    M_payload,
-  input  wire          CKB,
-  input  wire          RSTB
+  input  wire          clk,
+  input  wire          reset
 );
 
   wire                pipe_nxa;
@@ -220,15 +220,15 @@ module FifoRead_h20_h8_r0 (
   assign _zz_rAddr_1 = (rpt - 6'h14);
   assign _zz__zz_rpt_1_1 = _zz_rpt;
   assign _zz__zz_rpt_1 = {5'd0, _zz__zz_rpt_1_1};
-  RamRead_w8_r0 pipe (
+  CX_RamRead_r0_w8 pipe (
     .data      (rData[7:0]         ), //i
     .ren       (ren                ), //i
     .nxa       (pipe_nxa           ), //o
     .M_valid   (pipe_M_valid       ), //o
     .M_ready   (M_ready            ), //i
     .M_payload (pipe_M_payload[7:0]), //o
-    .CKB       (CKB                ), //i
-    .RSTB      (RSTB               )  //i
+    .clk       (clk                ), //i
+    .reset     (reset              )  //i
   );
   assign M_valid = pipe_M_valid;
   assign M_payload = pipe_M_payload;
@@ -257,8 +257,8 @@ module FifoRead_h20_h8_r0 (
   end
 
   assign rpt = _zz_rpt_2;
-  always @(posedge CKB or posedge RSTB) begin
-    if(RSTB) begin
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
       _zz_rpt_2 <= 6'h0;
     end else begin
       _zz_rpt_2 <= _zz_rpt_1;
@@ -268,7 +268,7 @@ module FifoRead_h20_h8_r0 (
 
 endmodule
 
-module FifoWrite_h20_w8 (
+module CX_FifoWrite_h20_w8 (
   output wire [5:0]    wpt,
   input  wire [5:0]    rpt,
   output wire [4:0]    wAddr,
@@ -279,8 +279,8 @@ module FifoWrite_h20_w8 (
   input  wire          S_valid,
   output wire          S_ready,
   input  wire [7:0]    S_payload,
-  input  wire          CKA,
-  input  wire          RSTA
+  input  wire          clk,
+  input  wire          reset
 );
 
   wire       [5:0]    _zz_wused;
@@ -332,8 +332,8 @@ module FifoWrite_h20_w8 (
   end
 
   assign wpt = _zz_wpt_2;
-  always @(posedge CKA or posedge RSTA) begin
-    if(RSTA) begin
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
       _zz_wpt_2 <= 6'h0;
     end else begin
       _zz_wpt_2 <= _zz_wpt_1;
@@ -343,13 +343,13 @@ module FifoWrite_h20_w8 (
 
 endmodule
 
-//CdcSingle_c1 replaced by CdcSingle_c1
+//CX_CdcSingle_c1 replaced by CX_CdcSingle_c1
 
-//CdcFlip_c1_w6_r1 replaced by CdcFlip_c1_w6_r1
+//CX_CdcFlip_c1_r1_w6 replaced by CX_CdcFlip_c1_r1_w6
 
-//CdcSingle_c1 replaced by CdcSingle_c1
+//CX_CdcSingle_c1 replaced by CX_CdcSingle_c1
 
-module CdcFlip_c1_w6_r1 (
+module CX_CdcFlip_c1_r1_w6 (
   input  wire          CKA,
   input  wire          RSTA,
   input  wire          CKB,
@@ -369,7 +369,7 @@ module CdcFlip_c1_w6_r1 (
   wire                B_y;
   (* async_reg = "true" *) reg        [5:0]    B_dj;
 
-  CdcSingle_c1 cdc (
+  CX_CdcSingle_c1 cdc (
     .CKA  (CKA  ), //i
     .RSTA (RSTA ), //i
     .CKB  (CKB  ), //i
@@ -411,15 +411,15 @@ module CdcFlip_c1_w6_r1 (
 
 endmodule
 
-module RamRead_w8_r0 (
+module CX_RamRead_r0_w8 (
   input  wire [7:0]    data,
   input  wire          ren,
   output wire          nxa,
   output wire          M_valid,
   input  wire          M_ready,
   output wire [7:0]    M_payload,
-  input  wire          CKB,
-  input  wire          RSTB
+  input  wire          clk,
+  input  wire          reset
 );
 
   reg                 valid;
@@ -427,8 +427,8 @@ module RamRead_w8_r0 (
   assign nxa = ((! M_valid) || M_ready);
   assign M_valid = valid;
   assign M_payload = data;
-  always @(posedge CKB or posedge RSTB) begin
-    if(RSTB) begin
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
       valid <= 1'b0;
     end else begin
       if(nxa) begin
@@ -440,9 +440,9 @@ module RamRead_w8_r0 (
 
 endmodule
 
-//CdcSingle_c1 replaced by CdcSingle_c1
+//CX_CdcSingle_c1 replaced by CX_CdcSingle_c1
 
-module CdcSingle_c1 (
+module CX_CdcSingle_c1 (
   input  wire          CKA,
   input  wire          RSTA,
   input  wire          CKB,

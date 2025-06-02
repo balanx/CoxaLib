@@ -1,10 +1,10 @@
 // Generator : SpinalHDL v1.12.0    git head : 1aa7d7b5732f11cca2dd83bacc2a4cb92ca8e5c9
-// Component : FifoS_h20_w8_c2_r1
-// Git hash  : 0fec75bfcf7614934dda2997dc0ed1df5dbe6289
+// Component : FifoS_c2_r1_h20_w8
+// Git hash  : 0ccfbb927b999c94e318d03edc3f767771d83daa
 
-`timescale 1ns/1ps
 
-module FifoS_h20_w8_c2_r1 (
+
+module FifoS_c2_r1_h20_w8 (
   output wire [4:0]    wused,
   input  wire          S_valid,
   output wire          S_ready,
@@ -33,7 +33,7 @@ module FifoS_h20_w8_c2_r1 (
   wire       [7:0]    B_r_M_payload;
   wire       [7:0]    mem_Q;
 
-  FifoWrite_h20_w8 A_w (
+  CX_FifoWrite_h20_w8 A_w (
     .wpt       (A_w_wpt[5:0]  ), //o
     .rpt       (B_r_rpt[5:0]  ), //i
     .wAddr     (A_w_wAddr[4:0]), //o
@@ -47,7 +47,7 @@ module FifoS_h20_w8_c2_r1 (
     .clk       (clk           ), //i
     .reset     (reset         )  //i
   );
-  FifoRead_h20_h8_r1 B_r (
+  CX_FifoRead_r1_h20_w8 B_r (
     .wpt       (A_w_wpt[5:0]      ), //i
     .rpt       (B_r_rpt[5:0]      ), //o
     .rAddr     (B_r_rAddr[4:0]    ), //o
@@ -61,7 +61,7 @@ module FifoS_h20_w8_c2_r1 (
     .clk       (clk               ), //i
     .reset     (reset             )  //i
   );
-  Ram2S_h20_w8 mem (
+  CX_Ram2S_h20_w8 mem (
     .E  (B_r_ren       ), //i
     .W  (A_w_wen       ), //i
     .AA (A_w_wAddr[4:0]), //i
@@ -78,7 +78,7 @@ module FifoS_h20_w8_c2_r1 (
 
 endmodule
 
-module Ram2S_h20_w8 (
+module CX_Ram2S_h20_w8 (
   input  wire          E,
   input  wire          W,
   input  wire [4:0]    AA,
@@ -121,7 +121,7 @@ module Ram2S_h20_w8 (
 
 endmodule
 
-module FifoRead_h20_h8_r1 (
+module CX_FifoRead_r1_h20_w8 (
   input  wire [5:0]    wpt,
   output wire [5:0]    rpt,
   output wire [4:0]    rAddr,
@@ -161,7 +161,7 @@ module FifoRead_h20_h8_r1 (
   assign _zz_rAddr_1 = (rpt - 6'h14);
   assign _zz__zz_rpt_1_1 = _zz_rpt;
   assign _zz__zz_rpt_1 = {5'd0, _zz__zz_rpt_1_1};
-  RamRead_w8_r1 pipe (
+  CX_RamRead_r1_w8 pipe (
     .data      (rData[7:0]         ), //i
     .ren       (ren                ), //i
     .nxa       (pipe_nxa           ), //o
@@ -209,7 +209,7 @@ module FifoRead_h20_h8_r1 (
 
 endmodule
 
-module FifoWrite_h20_w8 (
+module CX_FifoWrite_h20_w8 (
   output wire [5:0]    wpt,
   input  wire [5:0]    rpt,
   output wire [4:0]    wAddr,
@@ -284,7 +284,7 @@ module FifoWrite_h20_w8 (
 
 endmodule
 
-module RamRead_w8_r1 (
+module CX_RamRead_r1_w8 (
   input  wire [7:0]    data,
   input  wire          ren,
   output wire          nxa,
@@ -300,7 +300,7 @@ module RamRead_w8_r1 (
   wire       [7:0]    ramRegout_M_payload;
   reg                 valid;
 
-  RamRegout_w8 ramRegout (
+  CX_RamRegout_w8 ramRegout (
     .S_valid   (valid                   ), //i
     .S_ready   (ramRegout_S_ready       ), //o
     .S_payload (data[7:0]               ), //i
@@ -326,7 +326,7 @@ module RamRead_w8_r1 (
 
 endmodule
 
-module RamRegout_w8 (
+module CX_RamRegout_w8 (
   input  wire          S_valid,
   output wire          S_ready,
   input  wire [7:0]    S_payload,

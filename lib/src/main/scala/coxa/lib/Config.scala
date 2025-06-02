@@ -8,6 +8,9 @@ import spinal.core.sim._
 object Config {
   def spinal = SpinalConfig(
     targetDirectory = "hw/gen",
+    normalizeComponentClockDomainName = true,
+    globalPrefix = "CX_",
+    withTimescale = false,
     defaultConfigForClockDomains = ClockDomainConfig(
       resetActiveLevel = HIGH
     ),

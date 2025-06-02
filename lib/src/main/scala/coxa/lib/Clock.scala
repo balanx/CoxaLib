@@ -83,7 +83,9 @@ object CdcSingle {
 // assign B_y = (B_x ^ cdc_Q);
 // if(B_y) B_dj <= A_di;
 //
-class CdcFlip (dataWidth : Int, ring : Boolean = false, cdcDepth : Int = 1) extends Clock {
+// ringMode : true - auto flip, false - hand
+//
+class CdcFlip (dataWidth : Int, ringMode : Boolean = false, cdcDepth : Int = 1) extends Clock {
 
   assert(cdcDepth >= 1)
 
@@ -97,7 +99,7 @@ class CdcFlip (dataWidth : Int, ring : Boolean = false, cdcDepth : Int = 1) exte
   }
 
   noIoPrefix()
-  setDefinitionName(s"CdcFlip_c${cdcDepth}_w${dataWidth}" + "_r" + (if(ring) "1" else "0") )
+  setDefinitionName(s"CdcFlip_c${cdcDepth}" + "_r" + (if(ringMode) "1" else "0") + s"_w${dataWidth}" )
 
 //  val clkA = ClockDomain(io.CKA, io.RSTA)
 //  val clkB = ClockDomain(io.CKB, io.RSTB)
@@ -107,7 +109,7 @@ val cdc = CdcSingle(clkA, clkB, cdcDepth)
   val A = new ClockingArea(clkA) {
     val x = Reg(Bool()) init False
     val y = (x === io.fa)
-    if (ring)
+    if (ringMode)
       when(y) { x :=  ~x }
     else
       x := io.fa
@@ -126,8 +128,8 @@ val cdc = CdcSingle(clkA, clkB, cdcDepth)
 }
 
 object CdcFlip {
-  def apply(clkA : ClockDomain, clkB : ClockDomain, dataWidth : Int, ring : Boolean = false, cdcDepth: Int = 1) = {
-    val e = new CdcFlip(dataWidth, ring, cdcDepth)
+  def apply(clkA : ClockDomain, clkB : ClockDomain, dataWidth : Int, ringMode : Boolean = false, cdcDepth: Int = 1) = {
+    val e = new CdcFlip(dataWidth, ringMode, cdcDepth)
 //    e.io.CKA  <> clkA.readClockWire
 //    e.io.RSTA <> clkA.readResetWire
 //    e.io.CKB  <> clkB.readClockWire
@@ -155,7 +157,7 @@ class CdcRing (dataWidth : Int, cdcDepth: Int = 1) extends Clock {
 //  val clkA = ClockDomain(io.CKA, io.RSTA)
 //  val clkB = ClockDomain(io.CKB, io.RSTB)
 
-  val a2b = CdcFlip(clkA, clkB, dataWidth, ring = true, cdcDepth)
+  val a2b = CdcFlip(clkA, clkB, dataWidth, ringMode = true, cdcDepth)
   io.D <> a2b.io.D
   io.Q <> a2b.io.Q
   val fb = a2b.io.fb

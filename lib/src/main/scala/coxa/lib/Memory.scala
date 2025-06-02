@@ -336,7 +336,7 @@ case class RamRead(dataWidth : Int, regOut: Boolean = false) extends Component {
     val M = master Stream(UInt(dataWidth bits))
   }
   noIoPrefix()
-  setDefinitionName(s"RamRead_w${dataWidth}" + "_r" + (if(regOut) "1" else "0") )
+  setDefinitionName(s"RamRead" + "_r" + (if(regOut) "1" else "0") + s"_w${dataWidth}" )
 
   val valid = RegNextWhen(io.ren, io.nxa) init False
 
@@ -400,7 +400,7 @@ case class FifoRead(depth : Int, dataWidth : Int, regOut: Boolean = false) exten
     val M = master Stream(UInt(dataWidth bits))
   }
   noIoPrefix()
-  setDefinitionName(s"FifoRead_h${depth}_h${dataWidth}" + "_r" + (if(regOut) "1" else "0") )
+  setDefinitionName(s"FifoRead" + "_r" + (if(regOut) "1" else "0") + s"_h${depth}_w${dataWidth}" )
 
   val pipe = RamRead(dataWidth, regOut)
   io.M << pipe.io.M
@@ -477,8 +477,9 @@ class Fifo (
   }
   noIoPrefix()
   setDefinitionName("Fifo" + (if(async) "A" else "S")
-                    + s"_h${depth}_w${dataWidth}_c${cdcDepth}"
-                    + "_r" + (if(regOut) "1" else "0") )
+                    + s"_c${cdcDepth}"
+                    + "_r" + (if(regOut) "1" else "0")
+                    + s"_h${depth}_w${dataWidth}" )
 
 //  val clkA = ClockDomain(io.CKA, io.RSTA)
 //  val clkB = ClockDomain(io.CKB, io.RSTB)
