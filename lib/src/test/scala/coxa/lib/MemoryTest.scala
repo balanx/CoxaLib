@@ -11,7 +11,7 @@ import scala.collection.mutable.Queue
 import org.scalatest.funsuite.AnyFunSuite
 
 
-class StramTests extends AnyFunSuite {
+class MemoryTest extends AnyFunSuite {
   test("1. Sync. StramTests") {
 //object StramTests {
 //  def main(args: Array[String]): Unit = {

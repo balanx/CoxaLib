@@ -7,7 +7,7 @@ import spinal.core.{UInt, _}
 import spinal.lib._
 
 //
-case class Pipe(width: Int, mode : Int = 1) extends Component {
+case class Pipe (width: Int, mode : Int = 1) extends Component {
 
   val S = slave  Stream(UInt(width bits))
   val M = master Stream(UInt(width bits))
@@ -146,8 +146,27 @@ case class Test() extends Component {
 }
 */
 
+case class balanceTree() extends Component {
+  val io=new Bundle{
+    val dataIn=in Vec(UInt(8 bits),4)
+    val sum=out UInt(8 bits)
+  }
+  noIoPrefix()
+  io.sum:=io.dataIn.reduceBalancedTree(_+_,(s,l)=>RegNext(s) )
+}
+
+
+case class Test() extends Component {
+
+  val streamD, streamE, streamF = Stream(Bits(8 bits))
+  val arbiteredDEF = StreamArbiterFactory.sequentialOrder.noLock.onArgs(streamD, streamE, streamF)
+}
+
 object MiscVerilog extends App {
+//  Config.spinal.generateVerilog(Test() )
 //  Config.spinal.generateVerilog(Pipe(8) )
-//  Config.spinal.generateVerilog(Test( ) )
+//  Config.spinal.generateVerilog(Bin2hotTest(3) )
+//  Config.spinal.generateVerilog(Hot2binLowFirst(3) )
+  Config.spinal.generateVerilog(Roundrobin(8) )
 }
 

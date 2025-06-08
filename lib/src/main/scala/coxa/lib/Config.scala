@@ -9,8 +9,10 @@ object Config {
   def spinal = SpinalConfig(
     targetDirectory = "hw/gen",
     normalizeComponentClockDomainName = true,
-    globalPrefix = "CX_",
-    withTimescale = false,
+    inlineConditionalExpression = true,
+    nameWhenByFile = false,
+    globalPrefix   = "CX_",
+    withTimescale  = false,
     defaultConfigForClockDomains = ClockDomainConfig(
       resetActiveLevel = HIGH
     ),
