@@ -22,20 +22,17 @@ case class Ram1(depth: Int, dataWidth: Int) extends Component {
   }
 
   noIoPrefix()
-  setDefinitionName(s"Ram1_${depth}_${dataWidth}")
+  setDefinitionName(s"Ram1_h${depth}_w${dataWidth}")
 
   val mem = Mem(UInt(dataWidth bits), depth)
   mem.addAttribute("ram_style", "auto")
 
   val wen = ( io.W & io.E)
   val ren = (~io.W & io.E)
-  val clk = ClockDomain(io.CK)
 
-  //  val area_clk = new ClockingArea(ClockDomain(ClockDomain.current.readClockWire)) {
+  val clk = ClockDomain(io.CK)
   val area_clk = new ClockingArea(clk) {
-    when(wen) {
-      mem(io.A) := io.D
-    }
+    when(wen) { mem(io.A) := io.D }
 
     io.Q := RegNextWhen(mem(io.A), ren)
   }
@@ -532,7 +529,7 @@ object Fifo {
 
 
 object MemoryVerilog extends App {
-//  Config.spinal.generateVerilog(Ram1 (8, 16) )
+//  Config.spinal.generateVerilog(Ram1 (16, 8) )
 //  Config.spinal.generateVerilog(Ram2(8, 16, false) )
 //  Config.spinal.generateVerilog(Ram2S(8, 16) )
 //  Config.spinal.generateVerilog(RamRead(8, true) )

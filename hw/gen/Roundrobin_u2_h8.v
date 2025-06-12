@@ -1,38 +1,38 @@
 // Generator : SpinalHDL v1.12.0    git head : 1aa7d7b5732f11cca2dd83bacc2a4cb92ca8e5c9
-// Component : Roundrobin_8_3
-// Git hash  : 796ff061567ff476fc9fd80db7b27f4e41a74dca
+// Component : Roundrobin_u2_h8
+// Git hash  : 1ca958c88ee1acae0918d8664950ea9447df20f2
 
 
 
-module Roundrobin_8_3 (
+module Roundrobin_u2_h8 (
   output wire [2:0]    bin,
   input  wire          S_0_valid,
   output reg           S_0_ready,
-  input  wire [2:0]    S_0_payload,
+  input  wire [1:0]    S_0_payload,
   input  wire          S_1_valid,
   output reg           S_1_ready,
-  input  wire [2:0]    S_1_payload,
+  input  wire [1:0]    S_1_payload,
   input  wire          S_2_valid,
   output reg           S_2_ready,
-  input  wire [2:0]    S_2_payload,
+  input  wire [1:0]    S_2_payload,
   input  wire          S_3_valid,
   output reg           S_3_ready,
-  input  wire [2:0]    S_3_payload,
+  input  wire [1:0]    S_3_payload,
   input  wire          S_4_valid,
   output reg           S_4_ready,
-  input  wire [2:0]    S_4_payload,
+  input  wire [1:0]    S_4_payload,
   input  wire          S_5_valid,
   output reg           S_5_ready,
-  input  wire [2:0]    S_5_payload,
+  input  wire [1:0]    S_5_payload,
   input  wire          S_6_valid,
   output reg           S_6_ready,
-  input  wire [2:0]    S_6_payload,
+  input  wire [1:0]    S_6_payload,
   input  wire          S_7_valid,
   output reg           S_7_ready,
-  input  wire [2:0]    S_7_payload,
+  input  wire [1:0]    S_7_payload,
   output wire          M_valid,
   input  wire          M_ready,
-  output wire [2:0]    M_payload,
+  output wire [1:0]    M_payload,
   input  wire          clk,
   input  wire          reset
 );
@@ -44,7 +44,7 @@ module Roundrobin_8_3 (
   wire       [2:0]    hotLow_bin;
   wire                hotLow_zero;
   wire       [7:0]    _zz_maskHigh;
-  reg        [2:0]    _zz__zz_M_payload;
+  reg        [1:0]    _zz__zz_M_payload;
   wire       [7:0]    maskHigh;
   reg        [7:0]    maskLow;
   reg        [7:0]    req;
@@ -54,16 +54,16 @@ module Roundrobin_8_3 (
   wire                vld;
   wire       [2:0]    nx;
   reg                 vld_regNextWhen;
-  reg        [2:0]    _zz_M_payload;
+  reg        [1:0]    _zz_M_payload;
   reg        [2:0]    nx_regNextWhen;
 
   assign _zz_maskHigh = ((~ 8'h0) <<< bin);
-  CX_Hot2binLowFirst_3 hotHigh (
+  CX_Hot2binLowFirst_b3 hotHigh (
     .hot  (hotHigh_hot[7:0]), //i
     .bin  (hotHigh_bin[2:0]), //o
     .zero (hotHigh_zero    )  //o
   );
-  CX_Hot2binLowFirst_3 hotLow (
+  CX_Hot2binLowFirst_b3 hotLow (
     .hot  (hotLow_hot[7:0]), //i
     .bin  (hotLow_bin[2:0]), //o
     .zero (hotLow_zero    )  //o
@@ -167,7 +167,7 @@ module Roundrobin_8_3 (
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       vld_regNextWhen <= 1'b0;
-      _zz_M_payload <= 3'b000;
+      _zz_M_payload <= 2'b00;
     end else begin
       if(rdy) begin
         vld_regNextWhen <= vld;
@@ -187,9 +187,9 @@ module Roundrobin_8_3 (
 
 endmodule
 
-//CX_Hot2binLowFirst_3 replaced by CX_Hot2binLowFirst_3
+//CX_Hot2binLowFirst_b3 replaced by CX_Hot2binLowFirst_b3
 
-module CX_Hot2binLowFirst_3 (
+module CX_Hot2binLowFirst_b3 (
   input  wire [7:0]    hot,
   output reg  [2:0]    bin,
   output wire          zero

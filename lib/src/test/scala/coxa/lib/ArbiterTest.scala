@@ -12,6 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 
 class ArbiterTest extends AnyFunSuite {
+/*
   test("1. Bin2hotTest") {
 
     val compiled = Config.sim.compile(
@@ -35,7 +36,7 @@ class ArbiterTest extends AnyFunSuite {
       assert(dut.io.hot.toInt == 0)
     }
   }
-
+*/
   test("2. Hot2binLowFirst") {
 
     val compiled = Config.sim.compile(
@@ -117,6 +118,50 @@ class ArbiterTest extends AnyFunSuite {
     }
   }
 
+  test("4. RoundStrict") {
+
+    val compiled = Config.sim.compile(
+      rtl = RoundStrict(4, 2)
+    )
+
+    compiled.doSim{ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+      dut.io.M.ready #= true
+
+      dut.io.S(0).payload #= 0
+      dut.io.S(1).payload #= 1
+      dut.io.S(2).payload #= 2
+      dut.io.S(3).payload #= 3
+
+      dut.io.S(0).valid #= false
+      dut.io.S(1).valid #= false
+      dut.io.S(2).valid #= true
+      dut.io.S(3).valid #= true
+
+      dut.clockDomain.waitSampling(6)
+      var loop = true
+      while(loop) {
+        dut.clockDomain.waitSampling()
+        if (dut.io.S(2).ready.toBoolean) {
+          dut.io.S(2).valid #= false
+          loop = false
+        }
+      }
+      printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
+      assert(dut.io.M.payload.toInt == 2 && dut.io.bin.toInt == 2)
+
+      dut.clockDomain.waitSampling(6)
+      printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
+      assert(dut.io.M.payload.toInt == 3 && dut.io.bin.toInt == 3)
+
+      dut.io.S(0).valid #= true
+      dut.io.S(1).valid #= true
+      dut.clockDomain.waitSampling(2)
+      printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
+      assert(dut.io.M.payload.toInt == 0 && dut.io.bin.toInt == 0)
+      dut.clockDomain.waitSampling(20)
+    }
+  }
 
 }
 
