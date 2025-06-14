@@ -96,7 +96,7 @@ case class Roundrobin (hotWidth: Int, userWidth: Int = 0) extends Component {
   //mask Low  = 0011
   val maskHigh =  Bin2hotMaskHigh(io.bin)
   val maskLow  =  ~maskHigh
-  maskLow(io.bin) :=  ~io.M.valid // stop 1 cycle
+  maskLow(io.bin) :=  ~io.M.valid // STOP 1 cycle when the same one hot-bit only
 
   val req = UInt(hotWidth bits)
   for(i <- 0 until hotWidth) {
@@ -112,11 +112,11 @@ case class Roundrobin (hotWidth: Int, userWidth: Int = 0) extends Component {
 
   val rdy = ~io.M.valid | io.M.ready
   val vld = ~hotHigh.io.zero | ~hotLow.io.zero
-  val nx  =  Mux(hotHigh.io.zero, hotLow.io.bin, hotHigh.io.bin)
+  val bin =  Mux(hotHigh.io.zero, hotLow.io.bin, hotHigh.io.bin)
 
   io.M.valid := RegNextWhen(vld, rdy) init False
-  io.M.payload := RegNextWhen(io.S(nx).payload, rdy & vld) init 0
-  io.bin := RegNextWhen(nx, rdy & vld)
+  io.M.payload := RegNextWhen(io.S(bin).payload, rdy & vld) init 0
+  io.bin := RegNextWhen(bin, rdy & vld)
 
 }
 
@@ -185,13 +185,13 @@ case class RoundStrict (hotWidth: Int, userWidth: Int = 0) extends Component {
   noIoPrefix()
   setDefinitionName(s"RoundStrict_u${userWidth}_h${hotWidth}")
 
-  val s = Hot2binLowFirst(binWidth)
+  val sel = Hot2binLowFirst(binWidth)
   for (i <- 0 until hotWidth) {
-    s.io.hot(i) := io.S(i).valid
+    sel.io.hot(i) := io.S(i).valid
     io.S(i).ready := False
   }
-  io.M <-< io.S(s.io.bin)
-  io.bin := RegNext(s.io.bin) init 0
+  io.M <-< io.S(sel.io.bin)
+  io.bin := RegNext(sel.io.bin) init 0
 }
 
 object ArbiterVerilog extends App {

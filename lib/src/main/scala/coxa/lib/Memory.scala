@@ -7,12 +7,13 @@ import spinal.core.{UInt, _}
 import spinal.lib._
 
 // Single-Port
-case class Ram1(depth: Int, dataWidth: Int) extends Component {
+case class Ram1(depth: Int, dataWidth: Int, maskWidth: Int = 1) extends Component {
 
   val addrWidth = log2Up(depth)
 
   val io = new Bundle {
     val E = in Bool()
+    val M = (maskWidth > 1) generate (in UInt(maskWidth bits))
     val W = in Bool()
     val A = in UInt (log2Up(depth) bits)
     val D = in UInt(dataWidth bits)
@@ -22,7 +23,8 @@ case class Ram1(depth: Int, dataWidth: Int) extends Component {
   }
 
   noIoPrefix()
-  setDefinitionName(s"Ram1_h${depth}_w${dataWidth}")
+  val fname = if (maskWidth > 1) s"_m${maskWidth}" else ""
+  setDefinitionName(s"Ram1${fname}_h${depth}_w${dataWidth}")
 
   val mem = Mem(UInt(dataWidth bits), depth)
   mem.addAttribute("ram_style", "auto")
@@ -32,9 +34,12 @@ case class Ram1(depth: Int, dataWidth: Int) extends Component {
 
   val clk = ClockDomain(io.CK)
   val area_clk = new ClockingArea(clk) {
-    when(wen) { mem(io.A) := io.D }
-
     io.Q := RegNextWhen(mem(io.A), ren)
+
+    if (maskWidth > 1)
+      mem.write(io.A, io.D, wen, mask = io.M.asBits)
+    else
+      mem.write(io.A, io.D, wen)
   }
 
 }
@@ -44,7 +49,6 @@ case class Ram1(depth: Int, dataWidth: Int) extends Component {
 class Ram2(depth: Int, dataWidth: Int, async: Boolean = false) extends Component {
 
   val addrWidth = log2Up(depth)
-//  val async = (clkA != clkB)
 
   val io = new Bundle {
     val E = in Bool()
@@ -62,11 +66,6 @@ class Ram2(depth: Int, dataWidth: Int, async: Boolean = false) extends Component
   setDefinitionName("Ram2" + (if (async) "A" else "S")
                     + s"_h${depth}_w${dataWidth}")
 
-//  val wen =  io.W & io.E
-//  val ren = ~io.W & io.E
-  val wen = io.W
-  val ren = io.E
-
   val clkA = ClockDomain(if (async) io.CKA else io.CK)
   val clkB = ClockDomain(if (async) io.CKB else io.CK)
   clkB.setSyncWith(clkA)
@@ -79,14 +78,12 @@ class Ram2(depth: Int, dataWidth: Int, async: Boolean = false) extends Component
     val mem = Mem(UInt(dataWidth bits), depth)
     mem.addAttribute("ram_style", "auto")
 
-    when(wen) {
-      mem(io.AA) := io.D
-    }
+    mem.write(io.AA, io.D, io.W)
     data := mem(io.AB)
   }
 
   val areaB = new ClockingArea(clkB) {
-    io.Q := RegNextWhen(data, ren)
+    io.Q := RegNextWhen(data, io.E)
   }
 
   def Write(enable: Bool, address: UInt, data: UInt): Unit = {
@@ -516,7 +513,9 @@ class Fifo (
 }
 
 object Fifo {
-  def apply(clkA : ClockDomain, clkB : ClockDomain, depth : Int, dataWidth : Int, regOut: Boolean = false, cdcDepth: Int = 1) = {
+  def apply(clkA : ClockDomain, clkB : ClockDomain,
+            depth : Int, dataWidth : Int,
+            regOut: Boolean = false, cdcDepth: Int = 1) = {
     val e = new Fifo(depth, dataWidth, async = true, regOut, cdcDepth)
 //    e.io.CKA  <> clkA.readClockWire
 //    e.io.RSTA <> clkA.readResetWire
@@ -530,13 +529,14 @@ object Fifo {
 
 object MemoryVerilog extends App {
 //  Config.spinal.generateVerilog(Ram1 (16, 8) )
-//  Config.spinal.generateVerilog(Ram2(8, 16, false) )
+//  Config.spinal.generateVerilog(Ram1 (256, 32, 4) )
+  Config.spinal.generateVerilog(new Ram2(8, 16, false) )
 //  Config.spinal.generateVerilog(Ram2S(8, 16) )
 //  Config.spinal.generateVerilog(RamRead(8, true) )
 //  Config.spinal.generateVerilog(RamPipe(8) )
 //  Config.spinal.generateVerilog(FifoRead (8) )
 
-  Config.spinal.generateVerilog(new Fifo(20, 8, regOut = true, cdcDepth = 2) )
-  Config.spinal.generateVerilog(new Fifo(20, 8, async = true) )
+//  Config.spinal.generateVerilog(new Fifo(20, 8, regOut = true, cdcDepth = 2) )
+//  Config.spinal.generateVerilog(new Fifo(20, 8, async = true) )
 }
 

@@ -138,7 +138,7 @@ class ArbiterTest extends AnyFunSuite {
       dut.io.S(2).valid #= true
       dut.io.S(3).valid #= true
 
-      dut.clockDomain.waitSampling(6)
+      dut.clockDomain.waitSampling(4)
       var loop = true
       while(loop) {
         dut.clockDomain.waitSampling()
@@ -149,17 +149,27 @@ class ArbiterTest extends AnyFunSuite {
       }
       printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
       assert(dut.io.M.payload.toInt == 2 && dut.io.bin.toInt == 2)
-
-      dut.clockDomain.waitSampling(6)
+      dut.clockDomain.waitSampling(2) // 1 Error
       printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
       assert(dut.io.M.payload.toInt == 3 && dut.io.bin.toInt == 3)
+      dut.clockDomain.waitSampling(4)
 
-      dut.io.S(0).valid #= true
+      dut.io.S(3).valid #= false
+      dut.clockDomain.waitSampling(8)
+
       dut.io.S(1).valid #= true
-      dut.clockDomain.waitSampling(2)
+      loop = true
+      while(loop) {
+        dut.clockDomain.waitSampling()
+        if (dut.io.S(1).ready.toBoolean) {
+          dut.io.S(1).valid #= false
+          loop = false
+        }
+      }
+      dut.clockDomain.waitSampling()
       printf("%h, %h\n", dut.io.M.payload.toInt, dut.io.bin.toInt)
-      assert(dut.io.M.payload.toInt == 0 && dut.io.bin.toInt == 0)
-      dut.clockDomain.waitSampling(20)
+      assert(dut.io.M.payload.toInt == 1 && dut.io.bin.toInt == 1)
+      dut.clockDomain.waitSampling(8)
     }
   }
 

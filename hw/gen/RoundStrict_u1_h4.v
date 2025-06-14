@@ -1,6 +1,7 @@
 // Generator : SpinalHDL v1.12.0    git head : 1aa7d7b5732f11cca2dd83bacc2a4cb92ca8e5c9
 // Component : RoundStrict_u1_h4
-// Git hash  : 1ca958c88ee1acae0918d8664950ea9447df20f2
+// Git hash  : 3403de512becf488d71d5cb07443d3acc4fd5c35
+// https://github.com/balanx/Coxalib
 
 
 
